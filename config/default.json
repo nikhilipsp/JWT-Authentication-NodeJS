@@ -1,0 +1,12 @@
+{
+  "service": {
+    "port": 8014,
+    "name": "jwt-authentication-project"
+  },
+  "db": {
+    "host": "localhost",
+    "port": 3306,
+    "name": "jwtAuth",
+    "user": "root"
+  }
+}
