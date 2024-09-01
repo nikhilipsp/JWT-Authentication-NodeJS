@@ -9,7 +9,35 @@ const User = require(path.join(__dirname, "../db/models/user.js"))(
 );
 const Op = Sequelize.Op;
 
-async function registerUser(req, res, callback) {
+async function generateAccessAndRefereshTokens(userId) {
+  try {
+    const user = await User.findOne({
+      where: {
+        id: userId,
+      },
+    });
+    const accessToken = await user.generateAccessToken();
+    const refreshToken = await user.generateRefreshToken();
+
+    user.refreshToken = refreshToken;
+
+    await User.update(
+      { refreshToken: String(refreshToken) },
+      {
+        where: {
+          id: userId,
+        },
+      }
+    );
+
+    return { accessToken, refreshToken };
+  } catch (error) {
+    console.log(error);
+    throw new Error(error.message || "Error generating tokens");
+  }
+}
+
+async function registerUser(req, res) {
   try {
     // get user details from frontend
     const { userName, email, fullName, password } = req.body;
@@ -60,8 +88,65 @@ async function registerUser(req, res, callback) {
       );
   } catch (error) {
     console.log(error);
-    callback(new Error(error));
+    throw new Error(error.message || "Error registering user");
+  }
+}
+
+async function loginUser(req, res) {
+  try {
+    const { email, userName, password } = req.body;
+    console.log(email);
+
+    if (!userName && !email) {
+      return res.status(400).json(`username or email is required`);
+    }
+    //find the user
+    const user = await User.findOne({
+      where: {
+        [Op.or]: [{ email: email }, { username: userName }],
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json(`User does not exist`);
+    }
+    //password check
+    const isPasswordValid = await user.isPasswordCorrect(password);
+
+    if (!isPasswordValid) {
+      return res.status(401).json(`Invalid user credentials`);
+    }
+    //access and referesh token
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+      user.id
+    );
+
+    const loggedInUser = await User.findOne({
+      where: { id: user.id },
+      attributes: { exclude: ["password", "refreshToken"] },
+    });
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+    //send cookie
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        `User logged In Successfully : ${JSON.stringify({
+          user: loggedInUser,
+          accessToken,
+          refreshToken,
+        })}`
+      );
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: `Error occured in loginUser ${error}` });
   }
 }
 
 module.exports.registerUser = registerUser;
+module.exports.loginUser = loginUser;

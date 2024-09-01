@@ -1,13 +1,38 @@
 "use strict";
 const { Model } = require("sequelize");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+    // check if password entered by user is valid or not
+    async isPasswordCorrect(password) {
+      return await bcrypt.compare(password, this.password);
+    }
+    async generateAccessToken() {
+      return jwt.sign(
+        {
+          _id: this.id,
+          email: this.email,
+          username: this.userName,
+          fullName: this.fullName,
+        },
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+          expiresIn: process.env.ACCESS_TOKEN_EXPIRY,
+        }
+      );
+    }
+    async generateRefreshToken() {
+      return jwt.sign(
+        {
+          _id: this._id,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+          expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+        }
+      );
+    }
     static associate(models) {
       // define association here
     }
