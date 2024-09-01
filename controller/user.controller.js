@@ -148,5 +148,21 @@ async function loginUser(req, res) {
   }
 }
 
+async function logoutUser(req, res) {
+  await User.update({ refreshToken: null }, { where: { id: req.user.id } });
+
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshToken", options)
+    .json("User logged Out");
+}
+
 module.exports.registerUser = registerUser;
 module.exports.loginUser = loginUser;
+module.exports.logoutUser = logoutUser;
