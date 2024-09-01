@@ -1,10 +1,15 @@
-var express = require("express");
-var cors = require("cors");
-var bodyParser = require("body-parser");
+const express = require("express");
+const cors = require("cors");
+const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
+const routes = require("./routes");
 
-var app = express();
+const app = express();
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+app.use(cookieParser());
+
+app.use("/", routes);
 
 module.exports = app;

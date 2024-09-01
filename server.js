@@ -1,5 +1,5 @@
 require("dotenv").config();
-var app = require("./app");
+const app = require("./app");
 const config = require("config");
 const {
   service: { port, name },
@@ -7,7 +7,7 @@ const {
 
 app.listen(port, async () => {
   try {
-    var start_message =
+    const start_message =
       "**** ApplicationServer " +
       name.toUpperCase() +
       " started running on port " +
