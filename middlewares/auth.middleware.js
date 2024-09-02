@@ -20,7 +20,7 @@ const verifyJWT = async function (req, res, next) {
     const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
     const user = await User.findOne({
-      where: { id: decodedToken?._id },
+      where: { id: decodedToken?.id },
       attributes: { exclude: ["password", "refreshToken"] },
     });
 
@@ -31,7 +31,9 @@ const verifyJWT = async function (req, res, next) {
     req.user = user;
     next();
   } catch (error) {
-    throw new Error(error.message || "Invalid access token");
+    return res
+      .status(401)
+      .json({ error: "Invalid access token", message: error.message });
   }
 };
 

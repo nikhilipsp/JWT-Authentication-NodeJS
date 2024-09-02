@@ -163,6 +163,59 @@ async function logoutUser(req, res) {
     .json("User logged Out");
 }
 
+async function refreshAccessToken(req, res) {
+  const incomingRefreshToken =
+    req.cookies.refreshToken || req.body.refreshToken;
+
+  if (!incomingRefreshToken) {
+    return res.status(401).json(`unauthorized request`);
+  }
+
+  try {
+    const decodedToken = jwt.verify(
+      incomingRefreshToken,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    const user = await User.findOne({
+      where: { id: decodedToken?.id },
+    });
+
+    if (!user) {
+      return res.status(401).json(`Invalid refresh token`);
+    }
+
+    if (incomingRefreshToken !== user?.refreshToken) {
+      return res.status(401).json(`Refresh token is expired or used`);
+    }
+
+    const options = {
+      httpOnly: true,
+      secure: true,
+    };
+
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(
+      user.id
+    );
+
+    return res
+      .status(200)
+      .cookie("accessToken", accessToken, options)
+      .cookie("refreshToken", refreshToken, options)
+      .json(
+        `Access token refreshed : ${JSON.stringify({
+          accessToken,
+          refreshToken: refreshToken,
+        })}`
+      );
+  } catch (error) {
+    return res
+      .status(401)
+      .json({ error: "Invalid refresh token", message: error.message });
+  }
+}
+
 module.exports.registerUser = registerUser;
 module.exports.loginUser = loginUser;
 module.exports.logoutUser = logoutUser;
+module.exports.refreshAccessToken = refreshAccessToken;

@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
     async generateAccessToken() {
       return jwt.sign(
         {
-          _id: this.id,
+          id: this.id,
           email: this.email,
           username: this.userName,
           fullName: this.fullName,
@@ -25,7 +25,7 @@ module.exports = (sequelize, DataTypes) => {
     async generateRefreshToken() {
       return jwt.sign(
         {
-          _id: this._id,
+          id: this.id,
         },
         process.env.REFRESH_TOKEN_SECRET,
         {
