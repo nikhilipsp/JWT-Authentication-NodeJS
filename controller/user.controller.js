@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const path = require("path");
+const bcrypt = require("bcrypt");
 const db = require("../db/connection");
 const Sequelize = require("sequelize");
 const User = require(path.join(__dirname, "../db/models/user.js"))(
@@ -215,7 +216,34 @@ async function refreshAccessToken(req, res) {
   }
 }
 
+async function changeCurrentPassword(req, res) {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await User.findOne({
+    where: { id: req.user?.id },
+  });
+  const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+
+  if (!isPasswordCorrect) {
+    return res.status(400).json(`Invalid old password`);
+  }
+
+  const newHashedPaswd = await bcrypt.hash(newPassword, 10);
+
+  await User.update(
+    { password: newHashedPaswd },
+    {
+      where: {
+        id: user.id,
+      },
+    }
+  );
+
+  return res.status(200).json("Password changed successfully");
+}
+
 module.exports.registerUser = registerUser;
 module.exports.loginUser = loginUser;
 module.exports.logoutUser = logoutUser;
 module.exports.refreshAccessToken = refreshAccessToken;
+module.exports.changeCurrentPassword = changeCurrentPassword;
